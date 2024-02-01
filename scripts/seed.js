@@ -1,7 +1,7 @@
 const { db } = require("@vercel/postgres");
-const { customers } = require("../app/lib/placeholder-data.js");
-// import { db } from "@vercel/postgres";
-// import { customers } from "../app/lib/placeholder-data.js";
+const { customersData } = require("../app/lib/placeholder-data.js");
+// const { customers } = require("../app/lib/schema.js");
+// const { drizzle } = require("drizzle-orm/vercel-postgres");
 // const bcrypt = require("bcrypt");
 
 async function seedCustomers(client) {
@@ -13,6 +13,8 @@ async function seedCustomers(client) {
       CREATE TABLE IF NOT EXISTS customers (
         id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
+        email VARCHAR(255),
+        createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
     `;
 
@@ -20,15 +22,16 @@ async function seedCustomers(client) {
 
     // Insert data into the "customers" table
     const insertedCustomers = await Promise.all(
-      customers.map(
+      customersData.map(
         (customer) => client.sql`
-        INSERT INTO customers (id, name)
-        VALUES (${customer.id}, ${customer.name})
+        INSERT INTO customers (name, email)
+        VALUES (${customer.name}, ${customer.email})
         ON CONFLICT (id) DO NOTHING;
       `
       )
     );
 
+    console.log(`Customers: ${insertedCustomers}`);
     console.log(`Seeded ${insertedCustomers.length} customers`);
 
     return {
@@ -45,7 +48,7 @@ async function main() {
   const client = await db.connect();
 
   await seedCustomers(client);
-
+  // await client.sql`DROP TABLE IF EXISTS customers;`;
   await client.end();
 }
 
